@@ -1,0 +1,31 @@
+vrrp_instance APIServerVIP {
+  interface {{ keepalived_interface }}
+
+  state {{ keepalived_initial_state | upper }}
+
+  priority {{ keepalived_priority }}
+
+  mcast_src_ip {{ ansible_default_ipv4.address }}
+  unicast_src_ip {{ ansible_default_ipv4.address }}
+
+  virtual_router_id 100
+  advert_int 1
+  nopreempt
+
+  authentication {
+    auth_type PASS
+    auth_pass {{ keepalived_auth_pass }}
+  }
+
+  unicast_peer {
+{% for host in groups['lb'] %}
+    {% if host != inventory_hostname %}{{ hostvars[host].ansible_default_ipv4.address }}
+    {% endif %}
+
+{% endfor %}
+  }
+
+  virtual_ipaddress {
+    {{ keepalived_vip_address }}
+  }
+}

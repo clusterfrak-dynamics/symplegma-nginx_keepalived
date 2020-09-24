@@ -1,0 +1,14 @@
+---
+- name: Nginx | Restart nginx
+  systemd:
+    state: restarted
+    name: nginx.service
+    daemon_reload: yes
+  listen: "restart nginx"
+
+- name: Keepalived | Restart keepalived
+  systemd:
+    state: restarted
+    name: keepalived.service
+    daemon_reload: yes
+  listen: "restart keepalived"

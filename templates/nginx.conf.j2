@@ -1,0 +1,32 @@
+load_module /usr/lib/nginx/modules/ngx_stream_module.so;
+worker_processes auto;
+worker_rlimit_nofile 40000;
+
+events {
+  worker_connections 8192;
+}
+
+stream {
+
+  upstream inf-k8s-{{ env }}-back_servers_tcp {
+    least_conn;
+    {% for master in kubernetes_upstream_masters %}
+    server {{ master }} max_fails=3 fail_timeout=5s;
+    {%- endfor %}
+  }
+
+  log_format basic '$remote_addr [$time_local] '
+                   '$protocol $status $bytes_sent $bytes_received '
+                   '$session_time "$upstream_addr" '
+                   '"$upstream_bytes_sent" "$upstream_bytes_received" "$upstream_connect_time"';
+
+  access_log /var/log/nginx/inf-k8s-{{ env }}-back_servers_tcp basic;
+  error_log  /var/log/nginx/inf-k8s-{{ env }}-back_servers_tcp_error.log;
+
+  server {
+    listen 6443;
+    proxy_pass inf-k8s-{{ env }}-back_servers_tcp;
+    proxy_next_upstream on;
+  }
+}
+
